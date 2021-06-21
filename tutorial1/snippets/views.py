@@ -16,15 +16,38 @@ from .serializers import UserSerializer
 from django.contrib.auth.models import User
 from rest_framework import permissions
 from snippets.permissions import IsOwnerOrReadOnly
+from rest_framework.reverse import reverse
+from rest_framework import renderers
 
 # Create your views here.
 
 
+# Creating an endpoint for the highlighted snippets                        # T5
+class SnippetHighlight(generics.GenericAPIView):
+    queryset = Snippet.objects.all()
+    renderer_class = [renderers.StaticHTMLRenderer]
+
+    def get(self, request, *args, **kwargs):
+        snippet = self.get_object()
+        return Response(snippet.highlighted)
+
+
+# Creating an endpoint for the root of our API                             # T5
+@api_view(['GET'])
+def api_root(request, format=None):
+    return Response({
+        'users': reverse('user-list', request=request, format=format),
+        'snippets': reverse('snippet-list', request=request, format=format)
+    })
+
+
+# UserList View
 class UserList(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
 
+# UserDetail View
 class UserDetail(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -32,8 +55,9 @@ class UserDetail(generics.RetrieveAPIView):
 
 # The MOST Consisely creating API "It's really Awesome"
 # Using generic class-based views illustrated in T3 django-rest-framework.org
+# SnippetList View
 class SnippetList(generics.ListCreateAPIView):
-    permission_class = [permissions.IsAuthenticatedOrReadOnly]                                 # T4
+    permission_class = [permissions.IsAuthenticatedOrReadOnly]             # T4
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
 
@@ -41,6 +65,7 @@ class SnippetList(generics.ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
+# SnippetDetail View
 class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_class = [permissions.IsAuthenticatedOrReadOnly,
                         IsOwnerOrReadOnly]                                 # T4
