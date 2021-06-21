@@ -18,18 +18,40 @@ from rest_framework import permissions
 from snippets.permissions import IsOwnerOrReadOnly
 from rest_framework.reverse import reverse
 from rest_framework import renderers
+from rest_framework import viewsets
+from rest_framework.decorators import action
 
 # Create your views here.
 
 
-# Creating an endpoint for the highlighted snippets                        # T5
-class SnippetHighlight(generics.GenericAPIView):
-    queryset = Snippet.objects.all()
-    renderer_class = [renderers.StaticHTMLRenderer]
+# Refactoring to use ViewSets                                              # T6
+# User ViewSet
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    This viewset automatically provides 'list' and 'retrieve' actions.
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
-    def get(self, request, *args, **kwargs):
+
+# Snippet ViewSet
+class SnippetViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides 'list', 'create', 'retrieve', 'update',
+    and 'destroy' actions.
+    """
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer
+    permission_class = [permissions.IsAuthenticatedOrReadOnly,
+                        IsOwnerOrReadOnly]
+
+    @action(detail=True, renderer_classes=[renderers.StaticHTMLRenderer])
+    def highlight(self, request, *args, **kwargs):
         snippet = self.get_object()
         return Response(snippet.highlighted)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 # Creating an endpoint for the root of our API                             # T5
@@ -41,13 +63,25 @@ def api_root(request, format=None):
     })
 
 
-# UserList View
+# This all views are defined above in most concise way
+"""
+# Creating an endpoint for the highlighted snippets                        # T5
+class SnippetHighlight(generics.GenericAPIView):
+    queryset = Snippet.objects.all()
+    renderer_class = [renderers.StaticHTMLRenderer]
+
+    def get(self, request, *args, **kwargs):
+        snippet = self.get_object()
+        return Response(snippet.highlighted)
+
+
+# UserList View                                                            # T4
 class UserList(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
 
-# UserDetail View
+# UserDetail View                                                          # T4
 class UserDetail(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -71,7 +105,7 @@ class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
                         IsOwnerOrReadOnly]                                 # T4
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
-
+"""
 
 """
 # Using Mixins with GenericAPIView illustrated in T3 django-rest-framework.org
