@@ -29,7 +29,7 @@ snippet_detail = SnippetViewSet.as_view({
     'get': 'retrieve',
     'put': 'update',
     'patch': 'partial_update',
-    'delet': 'destroy'
+    'delete': 'destroy'
 })
 snippet_highlight = SnippetViewSet.as_view({
     'get': 'highlight'
